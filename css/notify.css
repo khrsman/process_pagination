@@ -1,0 +1,28 @@
+.notify-alert {
+  -webkit-box-shadow: 0 3px 10px rgba(0, 0, 0, 0.23), 0 3px 10px rgba(0, 0, 0, 0.16);
+          box-shadow: 0 3px 10px rgba(0, 0, 0, 0.23), 0 3px 10px rgba(0, 0, 0, 0.16);
+  border: 0 !important;
+  max-width: 400px;
+  color: #FFF;
+}
+
+.notify-alert.alert-success {
+  background-color: #4caf50;
+}
+
+.notify-alert.alert-info {
+  background-color: #2196F3;
+}
+
+.notify-alert.alert-warning {
+  background-color: #ffad33;
+}
+
+.notify-alert.alert-danger {
+  background-color: #f55a4e;
+}
+
+.notify-alert button[data-notify="dismiss"] {
+  margin-left: 5px;
+  outline: none !important;
+}
