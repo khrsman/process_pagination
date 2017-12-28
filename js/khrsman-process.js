@@ -1,70 +1,60 @@
 // author kaharisman ramdhani
 // harus diletakan setelah jquery dan pagination
+/*version 1.1*/
+var page = window.location.href;
+  var url_data = page+'/data';
+  var url_editor = page+'/editor';
+  var url_get = page+'/get';
+  var url_simpan = page+'/add';
+  var url_edit =  page+'/get_for_edit';
+  var url_update =  page+'/update';
+  var url_hapus =  page+'/delete';
 
 $().ready(function(){
-  var page = window.location.href;
-    var url_get = page+'/get';
-    var url_simpan = page+'/add';
-    var url_edit =  page+'/get_for_edit';
-    var url_update =  page+'/update';
-    var url_hapus =  page+'/delete';
-
   $(".input_number").keypress(function(event){
     return (event.which >= 48 && event.which <= 57) || event.which == 8 || event.which == 0 ;
   })
 
-
-
 // Menampilkan form tambah data
-  $('#btn_add_page').click(function(){
-    if($('#data_view').is(':visible')){
-      $('.add_page').show();
-      $('.edit_page').hide();
-      $('.edit_protection').prop('readonly', false);
-      // $('#data_view').toggle( "slide", 'slow', function(){$('#form_view').toggle( "slide");});
-      $('#data_view').hide();
-      $('#form_view').show();
-    } else{
-      // $('#form_view').toggle( "slide", 'slow', function(){$('#data_view').toggle( "slide");});
-    }
-  });
-  $('#btn_cancel_page').click(function(){
-    $('#data_view').show();
-    $('#form_view').hide();
+  $('body').on('click', '#btn_add', function() {
+      editor_page();
   });
 
-
+  $('body').on('click', '#btn_cancel', function() {
+    data_page();
+  });
 
   // Aksi pada saat tombol edit di klik
   $('body').on('click', '.btn_edit', function() {
-    var id = $(this).val();
-     edit_page(id,url_edit);
+     var id = $(this).val();
+     editor_page(id);
   });
+
   // Aksi pada saat tombol hapus di klik
   $('body').on('click', '.btn_delete', function() {
     var id = $(this).val();
-    remove(id,url_hapus);
+    if (confirm("Yakin untuk menghapus data?")) {
+       remove(id);
+    }
   });
 
   // Aksi pada saat tombol simpan di klik
-  $('#btn_save').click(function(){
-  if(validation()){
-    var data = $('form').serialize();
-    insert(data,url_simpan)
-  }
-
+  $('body').on('click', '#btn_save', function() {
+    if(validate()){
+      var data = $('form').serialize();
+      insert(data)
+    }
   });
-
 
  // Aksi pada saat tombol update di klik
-  $('#btn_update').click(function(){
-    // kirim data form berdasarkan nama(property name) inputannya
-  if( validation()){
-    var data = $('form').serialize();
-    update(data,url_update);
-  }
-  });
-});
+ $('body').on('click', '#btn_update', function() {
+   if( validate()){
+     var data = $('form').serialize();
+     update(data);
+   }
+ });
+ });
+
 
 // Aksi pada saat tombol enter ditekan
     $("form").keypress(function (e) {
@@ -84,17 +74,81 @@ $().ready(function(){
 // -----------------------------------------------------------------------------------------------------------
 // --------------------------------------- DAFTAR FUNGSI -----------------------------------------------------
 // -----------------------------------------------------------------------------------------------------------
+function notify_error(message){
+  $.notify({
+    title: "Error :",
+    message: message,
+    icon: 'fa fa-remove'
+  },{
+    type: "danger",
+    animate: {
+  enter: 'animated bounceIn',
+  exit: 'animated rotateOutUpLeft'
+  }
+  });
+}
 
-function validation(){
+function notify_success(message){
+  $.notify({
+    title: "Error :",
+    message: message,
+    icon: 'fa fa-check'
+  },{
+    type: "success",
+    animate: {
+  enter: 'animated zoomIn',
+  exit: 'animated rotateOutUpLeft'
+  }
+  });
+}
+
+//Menampilkan halaman data
+function data_page(){
+  $.post(url_data).done(function(data){
+    $("#page_content").html(data);
+  });
+}
+
+//Menampilkan halaman editor
+function editor_page(id = null){
+
+  get_content = $.post(url_editor).done(function(data){
+    $("#page_content").html(data);
+  });
+  get_content.done(function(){
+    $('.edit_page').hide();
+
+  //cek apabila ada id nya berarti halaman edit, masukan datanya kedalam form
+    if(id){
+      request = $.get(url_edit,{id: id});
+      request.done(function(data){
+        $('.edit_protection').prop('readonly', true);
+        var arr = JSON.parse(data);
+        $.each(arr[0], function(key, value){
+          var id_val = key;
+          $("#"+id_val).val(value);
+        });
+        $('.add_page').hide();
+        $('.edit_page').show();
+
+      });
+      request.fail(function() {
+        notify_error('Terjadi Kesalahan');
+    })
+  }
+
+  })
+}
+
+function validate(){
   var valid = true;
   $('.input_validation').each(function() {
     if(!this.value){
       valid = false;
-      var lbl = $(this).parent().prev("label").text();
       $.notify({
         title: "Error :",
-        message: lbl+" harus diisi!",
-        icon: 'fa fa-check'
+        message: "Data inputan tidak boleh kosong!",
+        icon: 'fa fa-remove'
       },{
         type: "danger"
       });
@@ -104,138 +158,40 @@ function validation(){
 return valid;
 }
 
-
-function edit_page(id,url_edit){
-  $.ajax({
-      type: "GET",
-      url: url_edit,
-      data: {id: id},
-      success: function (resdata) {
-        $('.edit_page').show();
-        $('.edit_protection').prop('readonly', true);
-        $('.add_page').hide();
-      $('#data_view').hide();
-      $('#form_view').show();
-
-      var arr = JSON.parse(resdata);
-      $.each(arr[0], function(key, value){
-        var id_val = key;
-        $("#"+id_val).val(value);
-      });
-
-      },
-      error: function (jqXHR, exception) {
-        // pesan error menggunakan notify.js
-        $.notify({
-          title: "Error :",
-          message: "Telah terjadi kesalahan!",
-          icon: 'fa fa-check'
-        },{
-          type: "danger"
-        });
-      }
-  });
-}
-
-// fungsi update
-function update(data,url_update){
-  $.ajax({
-      type: "POST",
-      url: url_update,
-      data: {data: data},
-      success: function (resdata) {
-        $.notify({
-          title: "Berhasil : ",
-          message: "Data telah diupdate",
-          icon: 'fa fa-check'
-        },{
-          type: "success"
-        });
-          pagination.init();
-          $(".xform")[0].reset();
-          $('#data_view').show();
-          $('#form_view').hide();
-
-          // loadDataTable(url_get);
-          // $('#form_tambah').toggle( "slide", 'slow', function(){$('#tabel').toggle( "slide");});
-            // location.reload();
-      },
-      error: function (jqXHR, exception) {
-        // pesan error menggunakan notify.js
-        $.notify({
-          title: "Error :",
-          message: "Telah terjadi kesalahan!",
-          icon: 'fa fa-check'
-        },{
-          type: "danger"
-        });
-      }
-  });
+//Update data
+function update(data){
+  request =  $.post(url_update, {data: data});
+  request.done(function(data){
+    notify_success('Data berhasil di update');
+    data_page();
+  })
+  request.fail(function() {
+    notify_error('Terjadi Kesalahan');
+})
 }
 
 // fungsi hapus
-function remove(id,url_hapus){
-  $.ajax({
-      type: "GET",
-      url: url_hapus,
-      data: {id: id},
-      success: function (resdata) {
-        $.notify({
-          title: "Berhasil : ",
-          message: "Data berhasil dihapus",
-          icon: 'fa fa-check'
-        },{
-          type: "success"
-        });
-        pagination.init();
-
-      },
-      error: function (jqXHR, exception) {
-        // pesan error menggunakan notify.js
-        $.notify({
-          title: "Error :",
-          message: "Telah terjadi kesalahan!",
-          icon: 'fa fa-check'
-        },{
-          type: "danger"
-        });
-      }
-  });
+function remove(id){
+  request =  $.post(url_hapus, {id: id});
+  request.done(function(data){
+    notify_success('Data berhasil dihapus');
+    data_page();
+  })
+  request.fail(function() {
+    notify_error('Terjadi Kesalahan');
+})
 }
 
 // fungsi simpan
-function insert(data, url_simpan){
+function insert(data){
 
-  $.ajax({
-      type: "POST",
-      url: url_simpan,
-      data: {data: data},
-      success: function (resdata) {
-        $.notify({
-          title: "Berhasil : ",
-          message: "Data telah ditambahkan",
-          icon: 'fa fa-check'
-        },{
-          type: "success"
-        });
-        pagination.init();
-          $(".xform")[0].reset();
- 	  $('#data_view').show();
-          $('#form_view').hide();
-         // loadDataTable(url_get);
-          //$('#form_tambah').toggle( "slide", 'slow', function(){$('#tabel').toggle( "slide");});
+  request =  $.post(url_simpan, {data: data});
+  request.done(function(data){
+    notify_success('Data berhasil disimpan');
+    data_page();
+  })
+  request.fail(function() {
+    notify_error('Terjadi Kesalahan');
+})
 
-            // location.reload();
-      },
-      error: function (jqXHR, exception) {
-        // pesan error menggunakan notify.js
-        $.notify({
-          title: "Error :",
-          message: "Telah terjadi kesalahan!",
-          icon: 'fa fa-check'
-        },{
-          type: "danger"
-        });
-      }
-  });
 }

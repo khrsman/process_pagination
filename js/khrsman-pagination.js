@@ -1,7 +1,7 @@
 // author kaharisman ramdhani
 
-// version
-//1.1 penambahana button edit custom
+/*version 1.1*/
+
 
 (function( $ ) {
     $.fn.pagination = function(options) {
